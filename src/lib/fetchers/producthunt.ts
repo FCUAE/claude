@@ -39,7 +39,7 @@ const POSTS_QUERY = `
       postedAfter: $postedAfter
       postedBefore: $postedBefore
       after: $after
-      first: 50
+      first: 20
     ) {
       edges {
         node {
@@ -155,6 +155,7 @@ export async function fetchProductHuntPosts(
     const json = await response.json();
     if (json.errors) {
       console.error(`[PH] GraphQL errors:`, JSON.stringify(json.errors));
+      break;
     }
     const postsData = json.data?.posts;
     console.log(`[PH] Posts in this page: ${postsData?.edges?.length ?? 0}, hasNextPage: ${postsData?.pageInfo?.hasNextPage}`);
