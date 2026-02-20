@@ -81,6 +81,7 @@ export async function fetchProductHuntPosts(
   dateStr: string
 ): Promise<PHProduct[]> {
   const rawToken = process.env.PRODUCT_HUNT_API_TOKEN;
+  console.log(`[PH] Token loaded: ${rawToken ? `"${rawToken.slice(0, 6)}..." (${rawToken.length} chars)` : "NOT SET"}`);
   if (!rawToken) {
     console.warn("PRODUCT_HUNT_API_TOKEN not set, skipping Product Hunt fetch");
     return [];
@@ -116,6 +117,8 @@ export async function fetchProductHuntPosts(
     };
     if (after) variables.after = after;
 
+    console.log(`[PH] Querying: postedAfter=${variables.postedAfter}, postedBefore=${variables.postedBefore}, cursor=${after || "none"}`);
+
     const response = await fetch(PH_API_URL, {
       method: "POST",
       headers: {
@@ -124,6 +127,8 @@ export async function fetchProductHuntPosts(
       },
       body: JSON.stringify({ query: POSTS_QUERY, variables }),
     });
+
+    console.log(`[PH] Response status: ${response.status} ${response.statusText}`);
 
     if (!response.ok) {
       let errorBody = "";
@@ -148,7 +153,11 @@ export async function fetchProductHuntPosts(
     }
 
     const json = await response.json();
+    if (json.errors) {
+      console.error(`[PH] GraphQL errors:`, JSON.stringify(json.errors));
+    }
     const postsData = json.data?.posts;
+    console.log(`[PH] Posts in this page: ${postsData?.edges?.length ?? 0}, hasNextPage: ${postsData?.pageInfo?.hasNextPage}`);
     if (!postsData) break;
 
     for (const edge of postsData.edges) {
