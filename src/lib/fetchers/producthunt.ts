@@ -109,8 +109,9 @@ export async function fetchProductHuntPosts(
   const allProducts: PHProduct[] = [];
   let after: string | null = null;
   let hasMore = true;
+  const MAX_PRODUCTS = 100; // Only need top products (sorted by votes)
 
-  while (hasMore) {
+  while (hasMore && allProducts.length < MAX_PRODUCTS) {
     const variables: Record<string, unknown> = {
       postedAfter,
       postedBefore,
