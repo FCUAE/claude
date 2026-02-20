@@ -106,9 +106,25 @@ export async function runDailyPipeline(
     return { date: targetDate, productsScanned: 0, topProducts: 0 };
   }
 
-  // Step 2.5: Founder-Fit Filter — only keep products relevant to founders/small teams
+  // Step 2.5a: Require Reddit-only products to have an external product URL
+  // Posts without a PH match AND without an external link are almost certainly
+  // discussion threads, not actual products.
+  const validated = unified.filter((product) => {
+    if (product.phProduct) return true; // PH products always pass
+    // Reddit-only: at least one post must link to an external product URL
+    const hasExternalUrl = product.redditPosts.some(
+      (p) => p.linkUrl !== null
+    );
+    if (!hasExternalUrl) {
+      console.log(`[Pipeline] Discarding Reddit-only discussion (no product URL): "${product.redditPosts[0]?.title?.slice(0, 80)}"`);
+    }
+    return hasExternalUrl;
+  });
+  console.log(`[Pipeline] ${validated.length} products after URL validation (${unified.length - validated.length} Reddit-only discussions removed)`);
+
+  // Step 2.5b: Founder-Fit Filter — only keep products relevant to founders/small teams
   console.log("[Pipeline] Applying Founder-Fit filter...");
-  const { kept: founderFitProducts, discarded } = filterFounderFit(unified);
+  const { kept: founderFitProducts, discarded } = filterFounderFit(validated);
   console.log(`[Pipeline] ${founderFitProducts.length} founder-fit products (${discarded} discarded)`);
 
   if (founderFitProducts.length === 0) {
