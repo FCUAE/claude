@@ -80,9 +80,25 @@ const POSTS_QUERY = `
 export async function fetchProductHuntPosts(
   dateStr: string
 ): Promise<PHProduct[]> {
-  const token = process.env.PRODUCT_HUNT_API_TOKEN;
-  if (!token) {
+  const rawToken = process.env.PRODUCT_HUNT_API_TOKEN;
+  if (!rawToken) {
     console.warn("PRODUCT_HUNT_API_TOKEN not set, skipping Product Hunt fetch");
+    return [];
+  }
+
+  // Clean up common token issues
+  let token = rawToken.trim();
+  if (token.toLowerCase().startsWith("bearer ")) {
+    console.warn(
+      "[PH] Token starts with 'Bearer ' - stripping prefix (it's added automatically)"
+    );
+    token = token.slice(7).trim();
+  }
+
+  if (token === "your_developer_token_here" || token.length < 10) {
+    console.warn(
+      "[PH] Token appears to be a placeholder or too short. Get your token at: https://www.producthunt.com/v2/oauth/applications"
+    );
     return [];
   }
 
@@ -110,9 +126,24 @@ export async function fetchProductHuntPosts(
     });
 
     if (!response.ok) {
+      let errorBody = "";
+      try {
+        errorBody = await response.text();
+      } catch {
+        // ignore read errors
+      }
       console.error(
         `Product Hunt API error: ${response.status} ${response.statusText}`
       );
+      if (errorBody) {
+        console.error(`[PH] Response body: ${errorBody}`);
+      }
+      if (response.status === 401) {
+        console.error(
+          "[PH] 401 Unauthorized - Your token may be invalid or expired. " +
+            "Get a new Developer Token at: https://www.producthunt.com/v2/oauth/applications"
+        );
+      }
       break;
     }
 

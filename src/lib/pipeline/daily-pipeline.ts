@@ -44,7 +44,10 @@ function getProductTopics(product: UnifiedProduct): string[] {
   return [];
 }
 
-export async function runDailyPipeline(dateStr?: string): Promise<{
+export async function runDailyPipeline(
+  dateStr?: string,
+  options?: { force?: boolean }
+): Promise<{
   date: string;
   productsScanned: number;
   topProducts: number;
@@ -56,9 +59,31 @@ export async function runDailyPipeline(dateStr?: string): Promise<{
   const existing = await prisma.dailySnapshot.findFirst({
     where: { snapshotDate: targetDate },
   });
-  if (existing) {
-    console.log(`[Pipeline] Data already exists for ${targetDate}, skipping`);
+  if (existing && !options?.force) {
+    console.log(`[Pipeline] Data already exists for ${targetDate}, skipping (use force=true to re-run)`);
     return { date: targetDate, productsScanned: 0, topProducts: 0 };
+  }
+
+  if (existing && options?.force) {
+    console.log(`[Pipeline] Force re-run: clearing existing data for ${targetDate}`);
+    // Get product IDs from snapshots for this date
+    const snapshots = await prisma.dailySnapshot.findMany({
+      where: { snapshotDate: targetDate },
+      select: { productId: true },
+    });
+    const productIds = snapshots.map((s) => s.productId);
+
+    // Delete in correct order (foreign key constraints)
+    await prisma.rawMention.deleteMany({
+      where: { productId: { in: productIds } },
+    });
+    await prisma.dailySnapshot.deleteMany({
+      where: { snapshotDate: targetDate },
+    });
+    await prisma.product.deleteMany({
+      where: { id: { in: productIds } },
+    });
+    console.log(`[Pipeline] Cleared ${snapshots.length} old snapshots`);
   }
 
   // Step 1: Fetch data from both sources

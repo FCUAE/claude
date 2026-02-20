@@ -12,9 +12,9 @@ export async function POST(request: NextRequest) {
 
   try {
     const body = await request.json().catch(() => ({}));
-    const date = (body as { date?: string }).date; // Optional: override date
+    const { date, force } = body as { date?: string; force?: boolean };
 
-    const result = await runDailyPipeline(date || undefined);
+    const result = await runDailyPipeline(date || undefined, { force });
 
     return NextResponse.json({
       success: true,
