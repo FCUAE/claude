@@ -51,6 +51,7 @@ export async function GET(request: NextRequest) {
       recencyBoost: s.recencyBoost,
       vibecodeScore: s.vibecodeScore,
       vibecodeBreakdown: JSON.parse(s.vibecodeBreakdown || "{}"),
+      founderFitCategory: s.founderFitCategory,
     },
     stats: {
       phUpvotes: s.phUpvotes,

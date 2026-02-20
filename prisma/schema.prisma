@@ -39,6 +39,7 @@ model DailySnapshot {
   recencyBoost       Float    @map("recency_boost")
   vibecodeScore      Int      @map("vibecode_score")
   vibecodeBreakdown  String?  @map("vibecode_breakdown") // JSON
+  founderFitCategory String?  @map("founder_fit_category") // e.g. "Dev Tools", "GTM & Sales"
   phUpvotes          Int      @default(0) @map("ph_upvotes")
   phComments         Int      @default(0) @map("ph_comments")
   redditUpvotes      Int      @default(0) @map("reddit_upvotes")

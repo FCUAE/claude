@@ -25,6 +25,7 @@ interface ProductSnapshot {
       emoji?: string;
     };
     crossPlatform: boolean;
+    founderFitCategory: string | null;
   };
   stats: {
     phUpvotes: number;

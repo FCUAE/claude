@@ -8,6 +8,7 @@ import {
   UnifiedProduct,
 } from "../scoring/pmf-score";
 import { calculateVibecodeScore } from "../scoring/vibecode-score";
+import { filterFounderFit, FounderFitCategory } from "../scoring/founder-fit";
 
 function getYesterdayDateStr(): string {
   const d = new Date();
@@ -105,12 +106,22 @@ export async function runDailyPipeline(
     return { date: targetDate, productsScanned: 0, topProducts: 0 };
   }
 
-  // Step 3: Calculate cohort maxes for normalization
+  // Step 2.5: Founder-Fit Filter — only keep products relevant to founders/small teams
+  console.log("[Pipeline] Applying Founder-Fit filter...");
+  const { kept: founderFitProducts, discarded } = filterFounderFit(unified);
+  console.log(`[Pipeline] ${founderFitProducts.length} founder-fit products (${discarded} discarded)`);
+
+  if (founderFitProducts.length === 0) {
+    console.log("[Pipeline] No founder-fit products found, pipeline complete");
+    return { date: targetDate, productsScanned: unified.length, topProducts: 0 };
+  }
+
+  // Step 3: Calculate cohort maxes for normalization (within founder-fit set only)
   const { maxUpvoteVelocity, maxCommentVelocity } =
-    calculateCohortMaxes(unified);
+    calculateCohortMaxes(founderFitProducts);
 
   // Step 4: Score each product
-  const scored = unified.map((product) => {
+  const scored = founderFitProducts.map((product) => {
     const pmf = calculatePMFScore(
       product,
       maxUpvoteVelocity,
@@ -123,8 +134,9 @@ export async function runDailyPipeline(
     const topics = getProductTopics(product);
 
     const vibecode = calculateVibecodeScore(name, tagline, description, topics);
+    const founderFitCategory = product.founderFitCategory;
 
-    return { product, pmf, vibecode, name, tagline, description, topics };
+    return { product, pmf, vibecode, name, tagline, description, topics, founderFitCategory };
   });
 
   // Step 5: Rank by PMF score, take top 5
@@ -181,6 +193,7 @@ export async function runDailyPipeline(
         recencyBoost: item.pmf.recencyBoost,
         vibecodeScore: item.vibecode.total,
         vibecodeBreakdown: JSON.stringify(item.vibecode),
+        founderFitCategory: item.founderFitCategory,
         phUpvotes,
         phComments,
         redditUpvotes,

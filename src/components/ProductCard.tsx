@@ -23,6 +23,7 @@ interface ProductData {
       emoji?: string;
     };
     crossPlatform: boolean;
+    founderFitCategory: string | null;
   };
   stats: {
     phUpvotes: number;
@@ -32,6 +33,19 @@ interface ProductData {
     redditSubreddits: string[];
   };
 }
+
+const CATEGORY_STYLES: Record<string, { bg: string; text: string; icon: string }> = {
+  "Dev Tools":      { bg: "bg-blue-100",    text: "text-blue-800",    icon: "🛠" },
+  "Infrastructure": { bg: "bg-slate-100",   text: "text-slate-800",   icon: "☁️" },
+  "AI/ML":          { bg: "bg-violet-100",  text: "text-violet-800",  icon: "🤖" },
+  "GTM & Sales":    { bg: "bg-orange-100",  text: "text-orange-800",  icon: "📈" },
+  "Productivity":   { bg: "bg-emerald-100", text: "text-emerald-800", icon: "⚡" },
+  "No-Code":        { bg: "bg-pink-100",    text: "text-pink-800",    icon: "🧩" },
+  "Analytics":      { bg: "bg-cyan-100",    text: "text-cyan-800",    icon: "📊" },
+  "Fintech":        { bg: "bg-amber-100",   text: "text-amber-800",   icon: "💰" },
+  "HR & Ops":       { bg: "bg-teal-100",    text: "text-teal-800",    icon: "👥" },
+  "Design":         { bg: "bg-fuchsia-100", text: "text-fuchsia-800", icon: "🎨" },
+};
 
 function getVibecodeColor(score: number): {
   bg: string;
@@ -110,6 +124,18 @@ export function ProductCard({ data }: { data: ProductData }) {
             )}
           </div>
 
+          {/* Founder-Fit Category Badge */}
+          {scores.founderFitCategory && CATEGORY_STYLES[scores.founderFitCategory] && (
+            <div className="mb-3">
+              <span
+                className={`inline-flex items-center gap-1 px-2.5 py-1 rounded-full text-xs font-semibold ${CATEGORY_STYLES[scores.founderFitCategory].bg} ${CATEGORY_STYLES[scores.founderFitCategory].text}`}
+              >
+                {CATEGORY_STYLES[scores.founderFitCategory].icon}{" "}
+                {scores.founderFitCategory}
+              </span>
+            </div>
+          )}
+
           {/* PMF Score */}
           <div className="mb-3">
             <div className="text-xs font-medium text-gray-500 uppercase tracking-wide mb-1">
@@ -143,7 +169,7 @@ export function ProductCard({ data }: { data: ProductData }) {
             )}
             {scores.crossPlatform && (
               <span className="text-purple-600 font-medium">
-                ✨ Cross-platform
+                ✨ Multi-signal validated
               </span>
             )}
           </div>
